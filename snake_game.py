@@ -23,7 +23,7 @@ BLACK = (0, 0, 0)
 
 class SnakeGameAI:
 
-    def __init__(self, snake_speed=100, scr_width=32, scr_height=20, scaling_factor=10):
+    def __init__(self, snake_speed=200, scr_width=32, scr_height=20, scaling_factor=10):
         # set display
         self.snake_speed = snake_speed
         self.scr_width = scr_width
@@ -120,22 +120,46 @@ class SnakeGameAI:
                 return True
         return False
 
-    def game_step(self, action):
+    def game_step(self, action=None):
+        reward = 0
         self.frame_iteration += 1
+
         # 1. collect user input
-
-        # for player action INCLUDING quit
-        # self.set_direction()
-
-        # for AI agent
-        self.get_direction_ai(action)
+        # self.set_direction()  # for player action INCLUDING quit
+        self.get_direction_ai(action)  # for AI agent
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
 
         # 2. move
-        # update game
+        self.move_step()
+
+        # 3. check if game over
+        if self.is_collision() or self.frame_iteration > 200 * self.snake_length:
+            reward = -10
+            self.game_over = True
+            return reward, self.game_over, self.snake_length - 1
+
+        # 4. place new food or just move
+        reward = self.check_food(reward)
+
+        # 5. update ui and clock
+        self.redraw()
+        self.clock.tick(self.snake_speed)
+        return reward, self.game_over, self.snake_length - 1
+
+    def check_food(self, reward):
+        if self.x == self.food_x and self.y == self.food_y:
+            reward = 20
+            self.place_food()
+            self.snake_length = self.snake_length + 1
+        self.snake_list.append((self.x, self.y))
+        if len(self.snake_list) > self.snake_length:
+            del self.snake_list[0]
+        return reward
+
+    def move_step(self):
         if self.direction == Direction.LEFT:
             self.x = self.x - 1
         elif self.direction == Direction.RIGHT:
@@ -144,28 +168,6 @@ class SnakeGameAI:
             self.y = self.y - 1
         elif self.direction == Direction.DOWN:
             self.y = self.y + 1
-
-        # 3. check if game over
-        reward = 0
-        if self.is_collision() or self.frame_iteration > 200 * self.snake_length:
-            reward = -10
-            self.game_over = True
-            return reward, self.game_over, self.snake_length - 1
-
-        # 4. place new food or just move
-        # in food
-        if self.x == self.food_x and self.y == self.food_y:
-            reward = 20
-            self.place_food()
-            self.snake_length = self.snake_length + 1
-        self.snake_list.append((self.x, self.y))
-        if len(self.snake_list) > self.snake_length:
-            del self.snake_list[0]
-
-        # 5. update ui and clock
-        self.redraw()
-        self.clock.tick(self.snake_speed)
-        return reward, self.game_over, self.snake_length - 1
 
     def game_loop(self):
 

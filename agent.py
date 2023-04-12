@@ -21,7 +21,8 @@ class Agent:
         self.model = Linear_QNet(11, 256, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
-    def get_state(self, game):
+    @staticmethod
+    def get_state(game):
         head = [game.x, game.y]
         point_l = [head[0] - 1, head[1]]
         point_r = [head[0] + 1, head[1]]
